@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Simulateur Immobilier — Finary Style (V3.1 • Mobile)</title>
+  <style>
+    :root{
+      --bg:#0b0b0c; --panel:#121214; --muted:#1b1b1f; --card:#161619; --text:#e9e9ec; --sub:#a3a3ad; --accent:#ffd479; --accent-2:#ff9a3c; --danger:#ff5d5d; --warning:#ffbf5e; --success:#47d49b; --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px;
+      --safe-bottom: env(safe-area-inset-bottom);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    html{ -webkit-text-size-adjust:100%; }
+    body{
+      margin:0; font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Inter, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background:radial-gradient(1200px 800px at 20% -10%, rgba(255,212,121,.08), transparent 60%), radial-gradient(1000px 600px at 120% 10%, rgba(255,154,60,.06), transparent 40%), var(--bg);
+      color:var(--text);
+    }
+    header{position:sticky; top:0; z-index:20; backdrop-filter:blur(6px); background:linear-gradient(180deg, rgba(11,11,12,.9), rgba(11,11,12,.6)); border-bottom:1px solid rgba(255,255,255,.06)}
+    .wrap{max-width:1200px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; gap:12px}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.2px}
+    .dot{width:14px; height:14px; border-radius:50%; background:radial-gradient(circle at 30% 30%, var(--accent), var(--accent-2)); box-shadow:0 0 30px rgba(255,212,121,.35)}
+    .title{font-size:clamp(18px, 2.3vw, 24px)}
+    .actions{margin-left:auto; display:flex; gap:10px}
+    .btn{padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.08); background:var(--panel); color:var(--text); cursor:pointer; transition:transform .15s ease, border-color .15s ease; font-weight:600}
+    .btn:hover{transform:translateY(-1px); border-color:rgba(255,255,255,.16)}
+    .btn:active{transform:translateY(0)}
+    .btn.accent{background:linear-gradient(90deg, var(--accent), var(--accent-2)); color:#181818; border:none}
+
+    main{max-width:1200px; margin:18px auto 96px; padding:0 16px}
+    .grid{display:grid; grid-template-columns:1.05fr .95fr; gap:18px}
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} }
+
+    .panel{background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:var(--shadow)}
+    .panel .head{padding:14px 14px 10px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(255,255,255,.06)}
+    .panel .head h2{margin:0; font-size:18px}
+    .panel .body{padding:14px}
+
+    /* Inputs */
+    .form-grid{display:grid; grid-template-columns:repeat(12,1fr); gap:12px}
+    .field{grid-column:span 6}
+    .field.full{grid-column:1 / -1}
+    .field.third{grid-column:span 4}
+    @media (max-width:720px){ .field, .field.third{grid-column:1 / -1} }
+
+    label{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--sub); margin:6px 2px}
+    .hint{font-size:11px; color:var(--sub); margin-top:6px}
+
+    .control{position:relative}
+    input,select{width:100%; padding:14px 44px 14px 14px; background:var(--muted); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:12px; outline:none; font-size:16px; transition:border-color .15s ease, box-shadow .15s ease}
+    /* ↑ 16px pour éviter le zoom iOS sur focus */
+    input:focus,select:focus{border-color:rgba(255,212,121,.55); box-shadow:0 0 0 4px rgba(255,212,121,.12)}
+    .suffix{position:absolute; right:10px; top:50%; transform:translateY(-50%); color:var(--sub); font-size:12px}
+
+    /* Masquer les flèches des inputs number */
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button{ -webkit-appearance:none; margin:0 }
+    input[type=number]{ -moz-appearance:textfield }
+
+    /* KPIs */
+    .kpis{display:grid; grid-template-columns:repeat(12,1fr); gap:12px}
+    .kpi{grid-column:span 6; background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,0)); border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:8px; position:relative; overflow:hidden; touch-action:manipulation}
+    .kpi.large{grid-column:span 12}
+    .kpi .label{color:var(--sub); font-size:12px; letter-spacing:.2px}
+    .kpi .value{font-feature-settings:"tnum" 1; font-variant-numeric:tabular-nums; font-size:clamp(20px, 5.5vw, 28px); font-weight:800}
+    .kpi .sub{color:var(--sub); font-size:12px}
+    .badge{position:absolute; top:12px; right:12px; font-size:11px; padding:4px 8px; border-radius:999px; font-weight:700; letter-spacing:.2px}
+    .badge.pos{background:rgba(71,212,155,.15); color:var(--success); border:1px solid rgba(71,212,155,.35)}
+    .badge.warn{background:rgba(255,191,94,.15); color:var(--warning); border:1px solid rgba(255,191,94,.35)}
+    .badge.neg{background:rgba(255,93,93,.15); color:var(--danger); border:1px solid rgba(255,93,93,.35)}
+
+    .progress{height:6px; background:#101014; border-radius:999px; overflow:hidden; border:1px solid rgba(255,255,255,.06)}
+    .bar{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), var(--accent-2)); transition:width .5s ease}
+
+    .foot-note{color:var(--sub); font-size:11px; margin-top:8px}
+
+    /* Effet appui tactile sur KPI */
+    @media (hover:hover){ .kpi:hover{transform:scale(1.01)} }
+    @media (hover:none){ .kpi:active{transform:scale(0.995)} }
+
+    /* Barre d’actions mobile collée en bas */
+    .mobile-cta{position:fixed; left:0; right:0; bottom:0; z-index:30; display:none; gap:10px; padding:10px 14px calc(10px + var(--safe-bottom)); backdrop-filter:blur(10px); background:linear-gradient(0deg, rgba(11,11,12,.95), rgba(11,11,12,.65)); border-top:1px solid rgba(255,255,255,.08)}
+    .mobile-cta .btn{flex:1; padding:14px}
+    @media (max-width:720px){ .mobile-cta{display:flex} }
+
+    /* Densité mobile */
+    @media (max-width:720px){
+      .wrap{padding:12px 14px}
+      main{margin-bottom:120px}
+      .kpi{grid-column:span 12}
+    }
+
+    /* Motion safe */
+    @media (prefers-reduced-motion: reduce){ *{animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; scroll-behavior:auto!important} }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="brand"><span class="dot"></span><span class="title">Simulateur Immobilier</span></div>
+      <div class="actions">
+        <button class="btn" id="resetBtn" title="Réinitialiser les champs" type="button">Réinitialiser</button>
+        <button class="btn accent" id="calcBtn" title="Lancer le calcul (Entrée)" type="button">Calculer</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid">
+      <!-- Inputs -->
+      <section class="panel" aria-labelledby="inputs-title">
+        <div class="head"><h2 id="inputs-title">Paramètres</h2></div>
+        <div class="body">
+          <div class="form-grid">
+            <!-- Bloc Opération -->
+            <div class="field full"><h3>Paramètres de l'opération</h3></div>
+            <div class="field">
+              <label for="prix">Prix net vendeur</label>
+              <div class="control"><input id="prix" type="number" inputmode="decimal" placeholder="150 000" value="150000" /><span class="suffix">€</span></div>
+              <div class="hint">Base du calcul des frais de notaire.</div>
+            </div>
+            <div class="field">
+              <label for="apport">Apport</label>
+              <div class="control"><input id="apport" type="number" inputmode="decimal" placeholder="10 000" value="10000" /><span class="suffix">€</span></div>
+            </div>
+            <div class="field">
+              <label for="travaux">Travaux</label>
+              <div class="control"><input id="travaux" type="number" inputmode="decimal" placeholder="20 000" value="20000" /><span class="suffix">€</span></div>
+            </div>
+            <div class="field">
+              <label for="loyer">Loyer mensuel brut</label>
+              <div class="control"><input id="loyer" type="number" inputmode="decimal" placeholder="800" value="800" /><span class="suffix">€ / mois</span></div>
+            </div>
+            <div class="field">
+              <label for="charges">Charges mensuelles du bien (copro, TF, assurances, entretien)</label>
+              <div class="control"><input id="charges" type="number" inputmode="decimal" placeholder="150" value="150" /><span class="suffix">€ / mois</span></div>
+            </div>
+            <div class="field third">
+              <label for="duree">Durée du prêt</label>
+              <div class="control"><input id="duree" type="number" inputmode="numeric" placeholder="20" value="20" /><span class="suffix">années</span></div>
+            </div>
+            <div class="field third">
+              <label for="taux">Taux d'intérêt</label>
+              <div class="control"><input id="taux" type="number" step="0.01" inputmode="decimal" placeholder="3,50" value="3.50" /><span class="suffix">% / an</span></div>
+            </div>
+            <div class="field third">
+              <label for="fnot">Frais de notaire</label>
+              <div class="control"><input id="fnot" type="number" step="0.1" inputmode="decimal" placeholder="8,0" value="8.0" /><span class="suffix">% du prix</span></div>
+            </div>
+
+            <!-- Séparateur -->
+            <div class="field full"><hr style="border:none; border-top:1px solid rgba(255,255,255,.06); margin:8px 0 2px"></div>
+
+            <!-- Bloc Emprunteur -->
+            <div class="field full"><h3>Paramètres de l'emprunteur</h3></div>
+            <div class="field third">
+              <label for="revenus">Revenus nets du foyer</label>
+              <div class="control"><input id="revenus" type="number" inputmode="decimal" placeholder="3 000" value="3000" /><span class="suffix">€ / mois</span></div>
+            </div>
+            <div class="field third">
+              <label for="chargesFoyer">Charges récurrentes du foyer</label>
+              <div class="control"><input id="chargesFoyer" type="number" inputmode="decimal" placeholder="800" value="800" /><span class="suffix">€ / mois</span></div>
+              <div class="hint">Loyer actuel, pensions, abonnements essentiels…</div>
+            </div>
+            <div class="field third">
+              <label for="autresCredits">Autres crédits en cours</label>
+              <div class="control"><input id="autresCredits" type="number" inputmode="decimal" placeholder="0" value="0" /><span class="suffix">€ / mois</span></div>
+            </div>
+            <div class="field third">
+              <label for="assur">Assurance emprunteur</label>
+              <div class="control"><input id="assur" type="number" step="0.01" inputmode="decimal" placeholder="0,30" value="0.30" /><span class="suffix">% / an du capital</span></div>
+              <div class="hint">Ex. 0,30%/an → (Capital × 0,003) / 12</div>
+            </div>
+            <div class="field third">
+              <label for="assurCover">Couverture assurance</label>
+              <div class="control"><input id="assurCover" type="number" step="1" inputmode="numeric" placeholder="100" value="100" /><span class="suffix">% (ex : 100 ou 50)</span></div>
+              <div class="hint">Si co-emprunteurs, ajustez la part couverte.</div>
+            </div>
+            <div class="field full"><div class="hint">Astuce : touchez une valeur — tout se met à jour instantanément. Utilisez la barre d’actions en bas sur mobile.</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section class="panel" aria-labelledby="results-title">
+        <div class="head"><h2 id="results-title">Indicateurs clés</h2></div>
+        <div class="body">
+          <div class="kpis">
+            <div class="kpi" id="kpi-mensu">
+              <span class="label">Mensualité crédit (hors assur.)</span>
+              <div class="value" id="mensualite" aria-live="polite">—</div>
+              <span class="sub" id="mensu-sub">Taux nominal • Échéances constantes</span>
+            </div>
+            <div class="kpi" id="kpi-assur">
+              <span class="label">Assurance emprunteur</span>
+              <div class="value" id="mensuAssur" aria-live="polite">—</div>
+              <span class="sub" id="assur-sub">Calculée sur capital × couverture</span>
+            </div>
+            <div class="kpi" id="kpi-mensuTot">
+              <span class="label">Mensualité totale (crédit + assur.)</span>
+              <div class="value" id="mensualiteTot" aria-live="polite">—</div>
+              <span class="sub">Base cashflow & endettement</span>
+            </div>
+            <div class="kpi" id="kpi-cash">
+              <span class="label">Cashflow mensuel</span>
+              <span class="badge" id="badge-cash">—</span>
+              <div class="value" id="cashflow" aria-live="polite">—</div>
+              <span class="sub" id="cash-sub">Loyer − Charges du bien − Mensualité totale</span>
+            </div>
+            <div class="kpi" id="kpi-minrent">
+              <span class="label">Loyer brut minimal pour CF = 0</span>
+              <div class="value" id="minRent" aria-live="polite">—</div>
+              <span class="sub" id="minRent-sub">Charges du bien + Mensualité totale</span>
+            </div>
+            <div class="kpi" id="kpi-montant">
+              <span class="label">Montant emprunté</span>
+              <div class="value" id="montant" aria-live="polite">—</div>
+              <span class="sub" id="montant-sub">Prix + frais + travaux − apport</span>
+            </div>
+            <div class="kpi" id="kpi-frais">
+              <span class="label">Frais de notaire estimés</span>
+              <div class="value" id="frais" aria-live="polite">—</div>
+              <span class="sub" id="frais-sub">Paramétrable (% du prix)</span>
+            </div>
+            <div class="kpi" id="kpi-yield">
+              <span class="label">Rendement brut</span>
+              <div class="value" id="yield" aria-live="polite">—</div>
+              <div class="progress" aria-hidden="true"><div class="bar" id="yield-bar"></div></div>
+              <span class="sub" id="yield-sub">(Loyer × 12) / Prix</span>
+            </div>
+            <div class="kpi large" id="kpi-debt">
+              <span class="label">Taux d'endettement (après opération)</span>
+              <span class="badge" id="badge-debt">—</span>
+              <div class="value" id="tauxEndettement" aria-live="polite">—</div>
+              <span class="sub" id="debt-sub">(Charges foyer + autres crédits + mensualité totale) / Revenus</span>
+            </div>
+          </div>
+          <div class="foot-note">Ces calculs sont indicatifs et ne constituent pas une offre de financement.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Barre d’actions mobile -->
+  <div class="mobile-cta" role="toolbar" aria-label="Actions">
+    <button class="btn" id="mobileResetBtn" type="button" title="Réinitialiser">Réinitialiser</button>
+    <button class="btn accent" id="mobileCalcBtn" type="button" title="Calculer">Calculer</button>
+  </div>
+
+  <script>
+    const fmtEur0 = n => new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n||0);
+    const fmtPct   = n => new Intl.NumberFormat('fr-FR',{style:'percent',maximumFractionDigits:2}).format(n||0);
+
+    // Normalisation FR -> nombre JS (supporte espaces et virgules)
+    const parseFR = v => {
+      if (typeof v !== 'string') v = String(v ?? '');
+      return parseFloat(v.replace(/[\s\u00A0]/g,'').replace(',', '.')) || 0;
+    };
+
+    const q = s => document.querySelector(s);
+    const els = {
+      prix:q('#prix'), apport:q('#apport'), travaux:q('#travaux'), loyer:q('#loyer'), charges:q('#charges'), duree:q('#duree'), taux:q('#taux'), fnot:q('#fnot'),
+      revenus:q('#revenus'), chargesFoyer:q('#chargesFoyer'), autresCredits:q('#autresCredits'), assur:q('#assur'), assurCover:q('#assurCover'),
+      mensualite:q('#mensualite'), mensuAssur:q('#mensuAssur'), mensualiteTot:q('#mensualiteTot'), cashflow:q('#cashflow'), montant:q('#montant'), frais:q('#frais'), yield:q('#yield'),
+      minRent:q('#minRent'), badgeCash:q('#badge-cash'), badgeDebt:q('#badge-debt'), yieldBar:q('#yield-bar'), mensuSub:q('#mensu-sub'), cashSub:q('#cash-sub'), debtPct:q('#tauxEndettement')
+    };
+
+    function calc(){
+      // Lecture des valeurs (tolère espaces/virgules)
+      const prix = parseFR(els.prix.value);
+      const apport = parseFR(els.apport.value);
+      const travaux = parseFR(els.travaux.value);
+      const loyer = parseFR(els.loyer.value);
+      const chargesBien = parseFR(els.charges.value);
+      const duree = Math.max(0, parseFR(els.duree.value));
+      const taux = Math.max(0, parseFR(els.taux.value)/100);
+      const fnotPct = Math.max(0, parseFR(els.fnot.value)/100);
+
+      const revenus = Math.max(0, parseFR(els.revenus.value));
+      const chargesFoyer = Math.max(0, parseFR(els.chargesFoyer.value));
+      const autresCredits = Math.max(0, parseFR(els.autresCredits?.value ?? 0));
+      const assur = Math.max(0, parseFR(els.assur?.value ?? 0)/100);
+      const assurCover = Math.min(100, Math.max(0, parseFR(els.assurCover?.value ?? 100))) / 100;
+
+      const fraisNot = prix * fnotPct;
+      const montantEmprunt = Math.max(0, prix + fraisNot + travaux - apport);
+
+      const n = Math.max(1, Math.round(duree * 12));
+      const i = taux / 12;
+      let mensualite = 0;
+      if (i === 0) { mensualite = montantEmprunt / n; }
+      else { mensualite = montantEmprunt * ( i / (1 - Math.pow(1+i, -n)) ); }
+
+      const mensuAssur = (montantEmprunt * assur * assurCover) / 12;
+      const mensualiteTot = mensualite + mensuAssur;
+
+      const cashflow = loyer - chargesBien - mensualiteTot;
+      const loyerMinimal = chargesBien + mensualiteTot;
+      const rendementBrut = prix>0 ? (loyer*12)/prix : 0;
+
+      const tauxEndettement = revenus>0 ? (chargesFoyer + autresCredits + mensualiteTot) / revenus : null;
+
+      // Push UI
+      els.frais.textContent = fmtEur0(fraisNot);
+      els.montant.textContent = fmtEur0(montantEmprunt);
+      els.mensualite.textContent = fmtEur0(mensualite);
+      els.mensuAssur.textContent = fmtEur0(mensuAssur);
+      els.mensualiteTot.textContent = fmtEur0(mensualiteTot);
+      els.cashflow.textContent = fmtEur0(cashflow);
+      els.minRent.textContent = fmtEur0(loyerMinimal);
+      els.yield.textContent = fmtPct(rendementBrut);
+      if (els.mensuSub) els.mensuSub.textContent = `Taux nominal ${fmtPct(taux)} • ${n} échéances`;
+      if (els.cashSub) els.cashSub.textContent = `Loyer ${fmtEur0(loyer)} − Charges bien ${fmtEur0(chargesBien)} − Mensualité totale`;
+
+      els.badgeCash.textContent = cashflow >= 0 ? 'Positif' : 'Négatif';
+      els.badgeCash.className = 'badge ' + (cashflow >= 0 ? 'pos' : 'neg');
+
+      const cap = 0.12; // 12% max barre
+      els.yieldBar.style.width = Math.min(100, Math.max(0, (rendementBrut/cap)*100)) + '%';
+
+      if (tauxEndettement===null){
+        els.debtPct.textContent = '—';
+        els.badgeDebt.textContent = '—';
+        els.badgeDebt.className = 'badge';
+      } else {
+        els.debtPct.textContent = fmtPct(tauxEndettement);
+        let badgeCls='pos', badgeTxt='OK';
+        if (tauxEndettement >= .35 && tauxEndettement < .45){ badgeCls='warn'; badgeTxt='Élevé'; }
+        if (tauxEndettement >= .45){ badgeCls='neg'; badgeTxt='Trop élevé'; }
+        els.badgeDebt.textContent = badgeTxt;
+        els.badgeDebt.className = 'badge ' + badgeCls;
+      }
+    }
+
+    // Écouteur délégué + rAF (perf)
+    let raf;
+    document.addEventListener('input', (e)=>{
+      if(!(e.target instanceof HTMLElement)) return;
+      if(e.target.matches('input,select')){
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(calc);
+      }
+    });
+    document.addEventListener('change', (e)=>{
+      if(!(e.target instanceof HTMLElement)) return;
+      if(e.target.matches('input,select')) calc();
+    });
+
+    // Boutons & raccourci Enter
+    const runCalc = () => calc();
+    const doReset = () => {
+      // Opération
+      els.prix.value=150000; els.apport.value=10000; els.travaux.value=20000; els.loyer.value=800; els.charges.value=150; els.duree.value=20; els.taux.value=3.50; els.fnot.value=8.0;
+      // Emprunteur
+      if(els.revenus) els.revenus.value=3000; if(els.chargesFoyer) els.chargesFoyer.value=800; if(els.autresCredits) els.autresCredits.value=0; if(els.assur) els.assur.value=0.30; if(els.assurCover) els.assurCover.value=100;
+      calc();
+    };
+
+    document.getElementById('calcBtn').addEventListener('click', runCalc);
+    document.getElementById('resetBtn').addEventListener('click', doReset);
+    document.getElementById('mobileCalcBtn').addEventListener('click', runCalc);
+    document.getElementById('mobileResetBtn').addEventListener('click', doReset);
+
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Enter') calc(); });
+
+    // Init
+    calc();
+  </script>
+</body>
+</html>
